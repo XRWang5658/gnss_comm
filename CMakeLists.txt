@@ -60,3 +60,6 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 )
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${GLOG_LIBRARIES})
 add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages_cpp)
+
+add_executable(spp_processor_node src/spp_processor_node.cpp)
+target_link_libraries(spp_processor_node ${PROJECT_NAME} ${catkin_LIBRARIES})

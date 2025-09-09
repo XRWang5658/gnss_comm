@@ -936,9 +936,11 @@ namespace gnss_comm
         double freq_min = -1.0;
         double freq_max = -1.0;
         if (sys == SYS_GPS || sys == SYS_GAL)
-            freq_min = freq_max = FREQ1;
+            // freq_min = freq_max = FREQ1;
+            {freq_min = FREQ1 - 1e6; freq_max = FREQ1 + 1e6;}
         else if (sys == SYS_BDS)
-            freq_min = freq_max = FREQ1_BDS;
+        {freq_min = FREQ1_BDS - 1e6; freq_max = FREQ1_BDS + 1e6;}
+            // freq_min = freq_max = FREQ1_BDS;
         else if (sys == SYS_GLO)
         {
             freq_min = FREQ1_GLO - 7 * DFRQ1_GLO;
