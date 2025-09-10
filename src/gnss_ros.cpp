@@ -73,11 +73,14 @@ namespace gnss_comm
     {
         EphemPtr ephem(new Ephem());
         ephem->sat = gnss_ephem_msg->sat;
-        ephem->ttr = gpst2time(gnss_ephem_msg->ttr.week, gnss_ephem_msg->ttr.tow);
-        ephem->toe = gpst2time(gnss_ephem_msg->toe.week, gnss_ephem_msg->toe.tow);
-        ephem->toc = gpst2time(gnss_ephem_msg->toc.week, gnss_ephem_msg->toc.tow);
-        ephem->toe_tow = gnss_ephem_msg->toe_tow;
-        ephem->week = gnss_ephem_msg->week;
+        double fixed_week = 0;
+        if (gnss_ephem_msg->ttr.week <= 2048)
+            fixed_week = 2048; // to avoid week number rollover issue
+        ephem->ttr = gpst2time(gnss_ephem_msg->ttr.week + fixed_week, gnss_ephem_msg->ttr.tow);
+        ephem->toe = gpst2time(gnss_ephem_msg->toe.week + fixed_week, gnss_ephem_msg->toe.tow);
+        ephem->toc = gpst2time(gnss_ephem_msg->toc.week + fixed_week, gnss_ephem_msg->toc.tow);
+        ephem->toe_tow = gnss_ephem_msg->toe.tow;
+        ephem->week = gnss_ephem_msg->week + fixed_week;
         ephem->iode = gnss_ephem_msg->iode;
         ephem->iodc = gnss_ephem_msg->iodc;
         ephem->health = gnss_ephem_msg->health;

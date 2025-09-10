@@ -2,20 +2,11 @@
 #include <vector>
 #include <map>
 
-// 导入 gnss_comm 库中所有需要的头文件
 #include "gnss_ros.hpp"
 #include "gnss_spp.hpp"
 #include "gnss_utility.hpp"
 #include "gnss_constant.hpp"
 
-// // 导入所有需要用到的 ROS 消息类型
-// #include <gnss_comm/GnssMeasMsg.h>
-// #include <gnss_comm/GnssEphemMsg.h>
-// #include <gnss_comm/GnssGloEphemMsg.h>
-// #include <gnss_comm/StampedFloat64Array.h>
-// #include <gnss_comm/GnssPVTSolnMsg.h>
-
-// 使用 gnss_comm 命名空间，这样我们就不需要在每个函数前都写 gnss_comm::
 using namespace gnss_comm;
 
 /**
@@ -216,11 +207,9 @@ public:
             {
                 // --- 临时剔除GLONASS的逻辑 开始 ---
                 
-                // 先转换ID并判断星座系统
-                uint32_t temp_sat_id = convert_custom_id_to_gnss_comm_id(obs->sat);
-                const uint32_t sys = satsys(temp_sat_id, NULL);
+                const uint32_t sys = satsys(obs->sat, NULL);
 
-                if (sys == SYS_GLO || sys == SYS_BDS || sys == SYS_GAL)
+                if (sys == SYS_GLO || sys == SYS_BDS || sys == 0 || sys == SYS_GAL)
                 {
                     // 如果是GLONASS卫星，则直接跳过，不进行处理
                     continue; 
@@ -234,57 +223,15 @@ public:
             }
         }
 
-        
-
-        // calculate the fixed offset in 2381 weeks.
-        // this is a temporal solution to handle the week rollover issue.
-        // double fixed_offset = 2380.0 * 604800.0 * 299792458.0;  // 2381 weeks in seconds
-        // ROS_INFO("Fixed offset applied to pseudorange: %.2d meters", fixed_offset);
-        // std::cout << "Fixed offset: " << fixed_offset << std::endl;
-
-        double GPS_Offset = calculate_pseudorange_offset(SYS_GPS, msg->meas[0].time.week);
-        double BDS_Offset = calculate_pseudorange_offset(SYS_BDS, msg->meas[0].time.week);
-        double GAL_Offset = calculate_pseudorange_offset(SYS_GAL, msg->meas[0].time.week);
-        double GLO_Offset = calculate_pseudorange_offset(SYS_GLO, msg->meas[0].time.week);
-        // std::cout << "Calculated Pseudorange Offsets (meters):" << std::endl;
-        // std::cout << "  GPS: " << GPS_Offset << std::endl;
-        // std::cout << "  BDS: " << BDS_Offset << std::endl;
-        // std::cout << "  GAL: " << GAL_Offset << std::endl;
-        // std::cout << "  GLO: " << GLO_Offset << std::endl;
-
-
-        // loop over all the observations and minus this fixed offset of the psr measurements
-        for (auto& obs : valid_obs)
-        {
-            
-            // obs->psr[0] -= fixed_offset;
-            obs->sat = convert_custom_id_to_gnss_comm_id(obs->sat);
-            const uint32_t sys = satsys(obs->sat, NULL);
-            // LOG(INFO) << "Satellite " << this_obs->sat << " system: " << sys;
-            // if (sys != SYS_GPS && sys != SYS_GLO && sys != SYS_BDS && sys != SYS_GAL){
-            //     // LOG(WARNING) << "Satellite system not found";
-            //     continue;
-            // }
-            if(sys == SYS_GPS){
-                obs->psr[0] -= GPS_Offset;
-            } else if (sys == SYS_BDS){
-                obs->psr[0] -= GPS_Offset+14*LIGHT_SPEED; // BDS is 14 seconds ahead of GPS
-            } else if (sys == SYS_GAL){
-                obs->psr[0] -= GPS_Offset;
-            } else if (sys == SYS_GLO){
-                obs->psr[0] -= GLO_Offset;
-            }
-        }
-
         // 列出所有观测到的gnss卫星，，按星系排列
-        // ROS_INFO("Observed satellites with ephem");
-        // ROS_INFO("PRN\tC/N0\tPSR");
-        // ROS_INFO("---------------------------");
-        // for (const auto& obs : valid_obs)
-        // {
-        //     ROS_INFO("%d\t%.1f\t%.1f\t%.5f",
-        //              obs->sat, obs->CN0[0], obs->psr[0], obs->freqs[0]);
-        // }
+        ROS_INFO("Observed satellites with ephem");
+        ROS_INFO("PRN\tC/N0\tPSR");
+        ROS_INFO("---------------------------");
+        for (const auto& obs : valid_obs)
+        {
+            ROS_INFO("%d\t%.1f\t%.1f\t%.5f",
+                     obs->sat, obs->CN0[0], obs->psr[0], obs->freqs[0]);
+        }
 
         // 至少需要4颗卫星才能进行定位
         if (valid_obs.size() < 4)
